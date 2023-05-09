@@ -1,0 +1,27 @@
+// Ce programme permet d'afficher un compteur. Ce compteur augmente de 1 lorsque la flèche du haut est appuyé et diminue de 1 lorsque la flèche du bas est appuyé
+
+#include <Gamebuino-Meta.h>
+
+int compteur = 0;
+
+void setup() {
+  gb.begin();
+}
+
+void loop() {
+  while (!gb.update());
+
+  // augmenter le compteur si le bouton 'flèche du haut' est appuyé
+  if (gb.buttons.pressed(BUTTON_UP)) {
+    compteur++;
+  }
+
+  // diminuer le compteur si le bouton 'flèche du bas' est appuyé
+  if (gb.buttons.pressed(BUTTON_DOWN)) {
+    compteur--;
+  }
+
+  gb.display.clear();
+  gb.display.setCursor(0, 0);
+  gb.display.println("Compteur : " + String(compteur));
+}

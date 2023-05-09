@@ -1,0 +1,103 @@
+// Il manque le système de score et peut-être quelques améliorations à rapporter.
+
+#include <Gamebuino-Meta.h>
+
+// Caractéristiques de la balle
+int balle_posX = gb.display.width() / 2;
+int balle_posY = gb.display.height() / 2;
+int balle_speedX = 1;
+int balle_speedY = -1;
+int balle_rayon = 3;
+
+// Caractéristiques des raquettes
+int raquette_largeur = 5;
+int raquette_hauteur = 20;
+int raquette_vitesse = 2;
+int raquette1_posX = 0;
+int raquette1_posY = gb.display.height() / 2 - raquette_hauteur / 2;
+int raquette2_posX = gb.display.width() - raquette_largeur;
+int raquette2_posY = gb.display.height() / 2 - raquette_hauteur / 2;
+
+void setup() {
+  gb.begin();
+}
+
+void loop() {
+  while (!gb.update());
+
+  // effacer l'écran
+  gb.display.clear();
+
+  // déplacer les raquettes
+  if (gb.buttons.repeat(BUTTON_UP, 0)) {
+    raquette1_posY = max(raquette1_posY - raquette_vitesse, 0);
+  }
+  if (gb.buttons.repeat(BUTTON_DOWN, 0)) {
+    raquette1_posY = min(raquette1_posY + raquette_vitesse, gb.display.height() - raquette_hauteur);
+  }
+  if (gb.buttons.repeat(BUTTON_A, 1)) {
+    raquette2_posY = max(raquette2_posY - raquette_vitesse, 0);
+  }
+  if (gb.buttons.repeat(BUTTON_B, 1)) {
+    raquette2_posY = min(raquette2_posY + raquette_vitesse, gb.display.height() - raquette_hauteur);
+  }
+
+  // détecter si la balle touche le bord gauche ou droit de l'écran
+  if (balle_posX - balle_rayon < 0) {
+    balle_speedX *= -1; // inverser la direction de la balle en x
+    // Réinitialiser les positions de la balle et des raquettes
+    balle_posX = gb.display.width() / 2;
+    balle_posY = gb.display.height() / 2;
+    raquette1_posX = 0;
+    raquette1_posY = gb.display.height() / 2 - raquette_hauteur / 2;
+    raquette2_posX = gb.display.width() - raquette_largeur;
+    raquette2_posY = gb.display.height() / 2 - raquette_hauteur / 2;
+    // Réinitialiser la direction de la balle
+    balle_speedX = 1;
+    balle_speedY = -1;
+  } else if (balle_posX + balle_rayon > gb.display.width()) {
+    balle_speedX *= -1; // inverser la direction de la balle en x
+
+    // Réinitialiser les positions de la balle et des raquettes
+    balle_posX = gb.display.width() / 2;
+    balle_posY = gb.display.height() / 2;
+    raquette1_posX = 0;
+    raquette1_posY = gb.display.height() / 2 - raquette_hauteur / 2;
+    raquette2_posX = gb.display.width() - raquette_largeur;
+    raquette2_posY = gb.display.height() / 2 - raquette_hauteur / 2;
+    // Réinitialiser la direction de la balle
+    balle_speedX = 1;
+    balle_speedY = -1;
+  }
+
+  // détecter si la balle touche le bord haut ou bas de l'écran
+  if (balle_posY - balle_rayon < 0) {
+    balle_posY = balle_rayon;
+    balle_speedY *= -1; // inverser la direction de la balle en y
+  } else if (balle_posY + balle_rayon > gb.display.height()) {
+    balle_posY = gb.display.height() - balle_rayon;
+    balle_speedY *= -1; // inverser la direction de la balle en y
+  }
+
+  // détecter si la balle touche la raquette1
+  if (balle_posX - balle_rayon <= raquette1_posX + raquette_largeur &&
+    balle_posY >= raquette1_posY &&
+    balle_posY <= raquette1_posY + raquette_hauteur) {
+    balle_posX = raquette1_posX + raquette_largeur + balle_rayon;
+    balle_speedX *= -1; // inverser la direction de la balle en x
+    } else if (balle_posX + balle_rayon >= raquette2_posX &&
+    balle_posY >= raquette2_posY &&
+    balle_posY <= raquette2_posY + raquette_hauteur) {
+    balle_posX = raquette2_posX - balle_rayon;
+    balle_speedX *= -1; // inverser la direction de la balle en x
+  }
+  
+  // déplacer la balle
+  balle_posX += balle_speedX;
+  balle_posY += balle_speedY;
+  
+  // dessiner la balle et les raquettes
+  gb.display.fillCircle(balle_posX, balle_posY, balle_rayon);
+  gb.display.fillRect(raquette1_posX, raquette1_posY, raquette_largeur, raquette_hauteur);
+  gb.display.fillRect(raquette2_posX, raquette2_posY, raquette_largeur, raquette_hauteur);
+}

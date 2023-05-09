@@ -1,0 +1,46 @@
+// balle rebondissante sur l'écran
+
+#include <Gamebuino-Meta.h>
+
+// Caractéristiques
+int balle_posX = gb.display.width() / 2;
+int balle_posY = gb.display.height() - 20;
+int balle_speedX = 1;
+int balle_speedY = -1;
+int balle_rayon = 3;
+
+void setup() {
+  gb.begin();
+}
+
+void loop() {
+  while (!gb.update());
+
+  // effacer l'écran
+  gb.display.clear();
+
+  // détecter si la balle touche le bord gauche ou droit de l'écran
+  if (balle_posX - balle_rayon < 0) {
+    balle_posX = balle_rayon;
+    balle_speedX *= -1; // inverser la direction de la balle en x
+  } else if (balle_posX + balle_rayon > gb.display.width()) {
+    balle_posX = gb.display.width() - balle_rayon;
+    balle_speedX *= -1; // inverser la direction de la balle en x
+  } else {
+    balle_posX += balle_speedX; // mettre à jour la position de la balle en x
+  }
+
+  // détecter si la balle touche le bord haut ou bas de l'écran
+  if (balle_posY - balle_rayon < 0) {
+    balle_posY = balle_rayon;
+    balle_speedY *= -1; // inverser la direction de la balle en y
+  } else if (balle_posY + balle_rayon > gb.display.height()) {
+    balle_posY = gb.display.height() - balle_rayon;
+    balle_speedY *= -1; // inverser la direction de la balle en y
+  } else {
+    balle_posY += balle_speedY; // mettre à jour la position de la balle en y
+  }
+
+  // dessiner la balle à sa position actuelle
+  gb.display.fillCircle(balle_posX, balle_posY, balle_rayon);
+}
