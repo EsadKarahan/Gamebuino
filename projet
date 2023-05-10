@@ -1,5 +1,3 @@
-// diminuer la vitesse player et mob ??
-
 #include <Gamebuino-Meta.h>
 
 const int PLAYER_SIZE = 4;
