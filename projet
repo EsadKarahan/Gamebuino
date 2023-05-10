@@ -76,16 +76,16 @@ void updateMobs(int paramRando, int nbMobs) {
     if (mobs[i].active) {
       numActiveMobs++;
       mobs[i].y += MOB_SPEED;
-      if (mobs[i].y > gb.display.height()) {
+      if (mobs[i].y > SCREEN_HEIGHT) {
         mobs[i].active = false;
         numActiveMobs--;
       } else {
-        int distance = dist(player_x, gb.display.height() - PLAYER_SIZE / 2, mobs[i].x + MOB_WIDTH / 2, mobs[i].y + MOB_HEIGHT / 2);
+        int distance = dist(player_x, SCREEN_HEIGHT - PLAYER_SIZE / 2, mobs[i].x + MOB_WIDTH / 2, mobs[i].y + MOB_HEIGHT / 2);
         if (distance + 1 <= PLAYER_SIZE / 2 + MOB_WIDTH / 2) {
           for (int j = 0; j < nbMobs; j++) {
             mobs[j].active = false;
           }
-          player_x = gb.display.width() / 2 + 1;
+          player_x = SCREEN_WIDTH / 2 + 1;
           lastSpawnTime = gb.frameCount * 1000 / 50;
           return;
         }
@@ -100,7 +100,7 @@ void updateMobs(int paramRando, int nbMobs) {
         bool superimpose = true;
         while (superimpose) {
           superimpose = false;
-          int x = rand() % (gb.display.width() - MOB_WIDTH + 1);
+          int x = rand() % (SCREEN_WIDTH - MOB_WIDTH + 1);
           int y = -40;
           for (int j = 0; j < nbMobs; j++) {
             if (mobs[j].active && dist(x, rando, mobs[j].x, mobs[j].y) < MIN_DISTANCE) {
