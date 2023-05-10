@@ -2,74 +2,178 @@
 
 #include <Gamebuino-Meta.h>
 
-const int PLAYER_SIZE = 5; // taille du cercle "personnage_principal"
-const int MOB_SIZE = 5; // taille des carrés "mobs"
-const float MOB_SPEED = 1; // vitesse de déplacement des carrés "mobs"
-const int MOB_INTERVAL = 80; // intervalle de génération des carrés "mobs"
+const int PLAYER_SIZE = 4;
+int player_x;
 
-int player_x; // position x du cercle "personnage_principal"
-int mob_count; // nombre de carrés "mobs" actuellement à l'écran
+const int MOB_WIDTH = 8;
+const int MOB_HEIGHT = 8;
+const float MOB_SPEED = 3;
+const int SPAWN_DELAY = 500;
+const int MIN_DISTANCE = MOB_WIDTH + 1;
 
-struct Mob {
-  int x, y;
+const int PROJECTILE_SIZE = 1;
+const int PROJECTILE_SPEED = 3;
+const int MAX_PROJECTILES = 3;
+
+int SCREEN_WIDTH = gb.display.width();
+int SCREEN_HEIGHT = gb.display.height();
+
+struct Projectile {
+  int x;
+  int y;
+  bool active;
 };
 
-Mob mobs[2]; // tableau contenant les positions des carrés "mobs"
+Projectile projectiles[MAX_PROJECTILES];
+
+struct Mob {
+  int x;
+  int y;
+  bool active;
+};
+
+Mob mobs[10];
+
+unsigned long lastSpawnTime = 0;
+
+bool projectile_active = false;
+int projectile_x, projectile_y;
 
 void setup() {
   gb.begin();
-  player_x = gb.display.width() / 2;
-}
-
-void update_player() {
-  if (gb.buttons.repeat(BUTTON_LEFT, 0) && player_x > PLAYER_SIZE / 2) {
-    player_x -= 1;
-  }
-  if (gb.buttons.repeat(BUTTON_RIGHT, 0) && player_x < gb.display.width() - PLAYER_SIZE / 2) {
-    player_x += 1;
-  }
+  player_x = SCREEN_WIDTH / 2;
 }
 
 void draw_player() {
   gb.display.setColor(WHITE);
-  gb.display.fillCircle(player_x, gb.display.height() - PLAYER_SIZE, PLAYER_SIZE / 2);
+  gb.display.fillRect(player_x - PLAYER_SIZE / 2, SCREEN_HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_SIZE);
 }
 
-void update_mobs() {
-  for (int i = 0; i < mob_count; i++) {
-    mobs[i].y += MOB_SPEED; // vitesse divisée par 2
-    if (mobs[i].y > gb.display.height() + MOB_SIZE / 2) {
-      mobs[i] = mobs[mob_count - 1];
-      mob_count--;
-      i--;
+void draw_projectile() {
+  gb.display.setColor(WHITE);
+  gb.display.fillRect(projectile_x - PROJECTILE_SIZE / 2, projectile_y, PROJECTILE_SIZE, PROJECTILE_SIZE);
+}
+
+void update_player() {
+  if (gb.buttons.repeat(BUTTON_LEFT, 1) && player_x > PLAYER_SIZE / 2) {
+    player_x -= 2;
+  }
+  if (gb.buttons.repeat(BUTTON_RIGHT, 1) && player_x < SCREEN_WIDTH - PLAYER_SIZE / 2) {
+    player_x += 2;
+  }
+  if (gb.buttons.pressed(BUTTON_A) && !projectile_active) {
+    projectile_active = true;
+    projectile_x = player_x;
+    projectile_y = SCREEN_HEIGHT - PLAYER_SIZE - PROJECTILE_SIZE;
+  }
+}
+
+int dist(int x1, int y1, int x2, int y2) {
+  return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
+void updateMobs(int paramRando, int nbMobs) {
+  int numActiveMobs = 0;
+  for (int i = 0; i < nbMobs; i++) {
+    if (mobs[i].active) {
+      numActiveMobs++;
+      mobs[i].y += MOB_SPEED;
+      if (mobs[i].y > gb.display.height()) {
+        mobs[i].active = false;
+        numActiveMobs--;
+      } else {
+        int distance = dist(player_x, gb.display.height() - PLAYER_SIZE / 2, mobs[i].x + MOB_WIDTH / 2, mobs[i].y + MOB_HEIGHT / 2);
+        if (distance + 1 <= PLAYER_SIZE / 2 + MOB_WIDTH / 2) {
+          for (int j = 0; j < nbMobs; j++) {
+            mobs[j].active = false;
+          }
+          player_x = gb.display.width() / 2 + 1;
+          lastSpawnTime = gb.frameCount * 1000 / 50;
+          return;
+        }
+        gb.display.drawRect(mobs[i].x, mobs[i].y, MOB_WIDTH, MOB_HEIGHT);
+      }
     }
   }
-  if (gb.frameCount % MOB_INTERVAL == 0 && mob_count < 3) { // nombre maximum réduit à 3
-    mobs[mob_count] = {(int)(rand() % (gb.display.width() - MOB_SIZE)) + MOB_SIZE / 2, 0};
-    mob_count++;
+  if (numActiveMobs < nbMobs) {
+    int rando = paramRando;
+    for (int i = 0; i < nbMobs; i++) {
+          if (!mobs[i].active) {
+        bool superimpose = true;
+        while (superimpose) {
+          superimpose = false;
+          int x = rand() % (gb.display.width() - MOB_WIDTH + 1);
+          int y = -40;
+          for (int j = 0; j < nbMobs; j++) {
+            if (mobs[j].active && dist(x, rando, mobs[j].x, mobs[j].y) < MIN_DISTANCE) {
+              superimpose = true;
+              break;
+            }
+          }
+          if (!superimpose) {
+            mobs[i].active = true;
+            mobs[i].x = x;
+            mobs[i].y = rando;
+            break;
+          }
+        }
+      }
+    }
   }
 }
 
-void draw_mobs() {
-  gb.display.setColor(WHITE);
-  for (int i = 0; i < mob_count; i++) {
-    gb.display.drawRect(mobs[i].x - MOB_SIZE / 2, mobs[i].y - MOB_SIZE / 2, MOB_SIZE, MOB_SIZE);
+// Nouvelle fonction pour gérer les projectiles
+void updateProjectiles(int nbMobs) {
+  for (int i = 0; i < 3; i++) { // On ne peut avoir que 3 projectiles à la fois
+    if (gb.buttons.pressed(BUTTON_A)) {
+      // Recherche d'un projectile inactif
+      int projectileIndex = -1;
+      for (int j = 0; j < 3; j++) {
+        if (!projectiles[j].active) {
+          projectileIndex = j;
+          break;
+        }
+      }
+      if (projectileIndex != -1) { // Projectile trouvé, on l'initialise
+        projectiles[projectileIndex].active = true;
+        projectiles[projectileIndex].x = player_x;
+        projectiles[projectileIndex].y = SCREEN_HEIGHT - PLAYER_SIZE;
+        break;
+      }
+    }
+    if (projectiles[i].active) {
+      projectiles[i].y -= PROJECTILE_SPEED;
+      // Vérification des collisions avec les mobs
+      for (int j = 0; j < nbMobs; j++) {
+        if (mobs[j].active && dist(projectiles[i].x, projectiles[i].y, mobs[j].x + MOB_WIDTH / 2, mobs[j].y + MOB_HEIGHT / 2) <= PROJECTILE_SIZE / 2 + MOB_WIDTH / 2) {
+          // Collision détectée
+          mobs[j].active = false;
+          projectiles[i].active = false;
+        }
+      }
+      // Vérification de la sortie de l'écran
+      if (projectiles[i].y < -PROJECTILE_SIZE) {
+        projectiles[i].active = false;
+      } else {
+        gb.display.setColor(WHITE);
+        gb.display.fillCircle(projectiles[i].x, projectiles[i].y, PROJECTILE_SIZE / 2);
+      }
+    }
   }
-}
-
-void update() {
-  update_player();
-  update_mobs();
-}
-
-void draw() {
-  gb.display.clear();
-  draw_player();
-  draw_mobs();
 }
 
 void loop() {
-  update();
-  draw();
-  gb.update();
+  delay(30); // Random entre 100 et 150. Si gestion de temps rand() % 31 + 10
+
+  unsigned long currentTime = gb.frameCount * 1000 / 50;
+
+  if (currentTime - lastSpawnTime > SPAWN_DELAY) {
+    lastSpawnTime = currentTime;
+  }
+  update_player();
+  gb.display.clear();
+  draw_player();
+
+  updateMobs(rand() % (0 - (-40) + 1) + (-40), 6);
+  updateProjectiles(6);
 }
