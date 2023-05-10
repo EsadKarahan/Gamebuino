@@ -85,6 +85,9 @@ void updateMobs(int paramRando, int nbMobs) {
           for (int j = 0; j < nbMobs; j++) {
             mobs[j].active = false;
           }
+          for (int j = 0; j < MAX_PROJECTILES; j++) {
+            projectiles[j].active = false;
+          }
           player_x = SCREEN_WIDTH / 2 + 1;
           lastSpawnTime = gb.frameCount * 1000 / 50;
           return;
