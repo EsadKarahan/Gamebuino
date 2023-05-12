@@ -1,5 +1,15 @@
+// Faire en sorte que le jeu soit de plus en plus difficile en fonction du temps (speed Mobs + Player; nombre de Mobs + Projectiles)
+// Système de score --> useless ?
+
+// Axes d'amélioration : 
+//  - Système de drops (bonus + malus)
+//  - Système de couleurs pour les drops
+//  - Changement du but du jeu : chaque drops récupérés change un pixel du player en la couleur du drop
+//  - Chiffres/nombres dans les mobs qui signifient le nombre de projectiles nécessaire pour le détruire
+
 #include <Gamebuino-Meta.h>
 extern const uint8_t font3x5[];
+extern const uint8_t font5x7[];
 
 const int PLAYER_SIZE = 4;
 int player_x;
@@ -65,9 +75,10 @@ void draw_projectile() {
 
 void drawGameState() {
   if (gameState == MENU) {
-    gb.display.setCursor(20, 25);
+    gb.display.setFont(font5x7);
+    gb.display.setCursor(10, 25);
     gb.display.print("press B to");
-    gb.display.setCursor(30, 35);
+    gb.display.setCursor(25, 35);
     gb.display.print("START");
     startTime = 0;
   } 
