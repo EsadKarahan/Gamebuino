@@ -263,7 +263,7 @@ void updateProjectiles(int nbMobs) {
 }
 
 void loop() {
-  delay(30); // Random entre 100 et 150. Si gestion de temps rand() % 31 + 10
+  delay(30); // Pour faire en sorte que le jeu soit jouable
 
   unsigned long currentTime = gb.frameCount * 1000 / 50;
 
